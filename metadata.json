@@ -1,0 +1,8 @@
+{
+  "name": "EVO Browser",
+  "description": "Navegador web de alto rendimiento y agente inteligente mediador de IA con EVO Memory, interceptación bidireccional y sistema antibucles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
