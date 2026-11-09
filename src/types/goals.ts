@@ -44,6 +44,22 @@ export interface ComplianceReport {
   unmetCriteria: string[];
   deviations: string[];
   recommendation: string;
+  evaluationMode: 'semantic_gemini' | 'heuristic_fallback';
+  evaluatorDetails: string;
+}
+
+export interface AuthorizationChallenge {
+  challengeToken: string;
+  confirmationCode: string;
+  action: 'update' | 'delete' | 'global_update' | 'unprotect';
+  goalId?: string;
+  expiresAt: number;
+  prompt: string;
+}
+
+export interface AuthorizationVerificationRequest {
+  challengeToken: string;
+  confirmationCode: string;
 }
 
 export interface AuditLogEntry {
@@ -59,7 +75,9 @@ export interface AuditLogEntry {
     | 'reject_unauthorized' 
     | 'validation_violation' 
     | 'context_injected'
-    | 'conflict_detected';
+    | 'conflict_detected'
+    | 'challenge_issued'
+    | 'challenge_verified';
   goalId?: string;
   details: string;
   author: string;
@@ -78,3 +96,4 @@ export interface ContextInjectionResult {
   injectedCriteriaCount: number;
   tokenCostEstimate: number;
 }
+

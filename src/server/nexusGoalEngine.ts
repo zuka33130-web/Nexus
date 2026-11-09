@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { 
   AuditLogEntry, 
+  AuthorizationChallenge,
   ComplianceReport, 
   ContextInjectionResult, 
   GlobalInstructions, 
@@ -19,6 +21,123 @@ const CONFLICTS_FILE = path.join(DATA_DIR, 'nexus_conflicts.json');
 // Ensure directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// ==========================================
+// 0. SecurityAuthority Service (Server-Verified Auth)
+// ==========================================
+export class SecurityAuthority {
+  private static challenges: Map<string, {
+    action: 'update' | 'delete' | 'global_update' | 'unprotect';
+    goalId?: string;
+    confirmationCode: string;
+    expiresAt: number;
+    description: string;
+  }> = new Map();
+
+  static createChallenge(
+    action: 'update' | 'delete' | 'global_update' | 'unprotect',
+    goalId?: string,
+    description?: string
+  ): AuthorizationChallenge {
+    // Generate secure random token and confirmation code
+    const challengeToken = 'auth_token_' + crypto.randomUUID();
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const confirmationCode = `CONFIRM-${action.toUpperCase()}-${randomHex}`;
+    const expiresAt = Date.now() + (120 * 1000); // 120 seconds TTL
+
+    const prompt = `Para autorizar la acción "${action}" sobre ${goalId ? `el objetivo ${goalId}` : 'las directivas globales'}, debe confirmar explícitamente en el servidor con el código: ${confirmationCode}`;
+
+    this.challenges.set(challengeToken, {
+      action,
+      goalId,
+      confirmationCode,
+      expiresAt,
+      description: description || prompt,
+    });
+
+    AuditLogger.log(
+      'challenge_issued',
+      `Desafío de autorización de servidor generado para ${action} (${goalId || 'global'}). Expira en 120s.`,
+      true,
+      goalId
+    );
+
+    return {
+      challengeToken,
+      confirmationCode,
+      action,
+      goalId,
+      expiresAt,
+      prompt,
+    };
+  }
+
+  static verifyAndConsume(
+    challengeToken?: string,
+    confirmationCode?: string,
+    action?: string,
+    goalId?: string
+  ): { valid: boolean; error?: string } {
+    if (!challengeToken || typeof challengeToken !== 'string') {
+      return {
+        valid: false,
+        error: 'AUTORIZACIÓN DENEGADA: Falta el challengeToken emitido por el servidor. Las solicitudes con indicadores booleanos falsificados (explicitAuthorization: true) son rechazadas.'
+      };
+    }
+
+    const stored = this.challenges.get(challengeToken);
+    if (!stored) {
+      return {
+        valid: false,
+        error: 'AUTORIZACIÓN DENEGADA: El challengeToken no existe o ya fue consumido.'
+      };
+    }
+
+    if (Date.now() > stored.expiresAt) {
+      this.challenges.delete(challengeToken);
+      return {
+        valid: false,
+        error: 'AUTORIZACIÓN DENEGADA: El token de autorización ha expirado.'
+      };
+    }
+
+    if (action && stored.action !== action) {
+      return {
+        valid: false,
+        error: `AUTORIZACIÓN DENEGADA: El token fue emitido para la acción "${stored.action}", no para "${action}".`
+      };
+    }
+
+    if (goalId && stored.goalId && stored.goalId !== goalId) {
+      return {
+        valid: false,
+        error: `AUTORIZACIÓN DENEGADA: El token no corresponde al objetivo "${goalId}".`
+      };
+    }
+
+    const expectedCode = stored.confirmationCode.trim().toUpperCase();
+    const providedCode = (confirmationCode || '').trim().toUpperCase();
+
+    if (expectedCode !== providedCode) {
+      return {
+        valid: false,
+        error: `AUTORIZACIÓN DENEGADA: Código de confirmación inválido. Se esperaba "${expectedCode}".`
+      };
+    }
+
+    // Single-use: consume immediately
+    this.challenges.delete(challengeToken);
+
+    AuditLogger.log(
+      'challenge_verified',
+      `Desafío verificado y consumido exitosamente para acción ${action} (${goalId || 'global'}).`,
+      true,
+      goalId
+    );
+
+    return { valid: true };
+  }
 }
 
 const DEFAULT_GLOBAL_INSTRUCTIONS: GlobalInstructions = {
@@ -149,11 +268,25 @@ export class InstructionRegistry {
     return DEFAULT_GLOBAL_INSTRUCTIONS;
   }
 
-  static saveGlobalInstructions(data: GlobalInstructions, authorized: boolean = true): GlobalInstructions {
-    if (!authorized) {
-      AuditLogger.log('reject_unauthorized', 'Intento de modificar instrucciones globales sin autorización.', false);
-      throw new Error('Modificación no autorizada de instrucciones globales.');
+  static saveGlobalInstructions(
+    data: GlobalInstructions, 
+    authVerification?: { challengeToken?: string; confirmationCode?: string }
+  ): GlobalInstructions {
+    const verification = SecurityAuthority.verifyAndConsume(
+      authVerification?.challengeToken,
+      authVerification?.confirmationCode,
+      'global_update'
+    );
+
+    if (!verification.valid) {
+      AuditLogger.log(
+        'reject_unauthorized',
+        `Intento DENEGADO de modificar directivas globales. Motivo: ${verification.error}`,
+        false
+      );
+      throw new Error(verification.error);
     }
+
     let current: GlobalInstructions = DEFAULT_GLOBAL_INSTRUCTIONS;
     try {
       if (fs.existsSync(GLOBAL_FILE)) {
@@ -163,7 +296,7 @@ export class InstructionRegistry {
 
     data.updatedAt = Date.now();
     this.writeGlobalFile(data);
-    AuditLogger.log('edit', 'Instrucciones globales actualizadas.', true, undefined, { before: current, after: data });
+    AuditLogger.log('edit', 'Instrucciones globales actualizadas con verificación de servidor.', true, undefined, { before: current, after: data });
     return data;
   }
 }
@@ -230,7 +363,7 @@ export class GoalManager {
   static updateGoal(
     id: string, 
     updates: Partial<NexusGoal>, 
-    explicitAuthorization: boolean = false
+    authVerification?: { challengeToken?: string; confirmationCode?: string }
   ): NexusGoal {
     const goals = this.loadGoals();
     const idx = goals.findIndex(g => g.id === id);
@@ -240,17 +373,24 @@ export class GoalManager {
 
     const current = goals[idx];
 
-    // Protected Check: If goal is protected, prohibited to edit rules without explicit authorization
-    if (current.isProtected && !explicitAuthorization) {
-      AuditLogger.log(
-        'reject_unauthorized', 
-        `Intento denegado de modificar el objetivo protegido "${current.title}" sin confirmación explícita.`,
-        false,
+    // Protected Check: If goal is protected, strictly require server-verified challenge
+    if (current.isProtected) {
+      const verification = SecurityAuthority.verifyAndConsume(
+        authVerification?.challengeToken,
+        authVerification?.confirmationCode,
+        'update',
         id
       );
-      throw new Error(
-        `El objetivo "${current.title}" está PROTEGIDO. Para modificar sus prohibiciones o instrucciones, se requiere autorización explícita del usuario.`
-      );
+
+      if (!verification.valid) {
+        AuditLogger.log(
+          'reject_unauthorized', 
+          `Intento denegado de modificar el objetivo protegido "${current.title}". Motivo: ${verification.error}`,
+          false,
+          id
+        );
+        throw new Error(verification.error);
+      }
     }
 
     const updated: NexusGoal = {
@@ -267,7 +407,7 @@ export class GoalManager {
 
     AuditLogger.log(
       'edit',
-      `Objetivo "${updated.title}" actualizado a versión ${updated.version}.`,
+      `Objetivo protegido "${updated.title}" actualizado con verificación de servidor a versión ${updated.version}.`,
       true,
       id,
       { before: current, after: updated }
@@ -295,24 +435,36 @@ export class GoalManager {
     return target;
   }
 
-  static deleteGoal(id: string, explicitAuthorization: boolean = false): boolean {
+  static deleteGoal(
+    id: string, 
+    authVerification?: { challengeToken?: string; confirmationCode?: string }
+  ): boolean {
     const goals = this.loadGoals();
     const target = goals.find(g => g.id === id);
     if (!target) return false;
 
-    if (target.isProtected && !explicitAuthorization) {
-      AuditLogger.log(
-        'reject_unauthorized',
-        `Intento denegado de eliminar el objetivo protegido "${target.title}".`,
-        false,
+    if (target.isProtected) {
+      const verification = SecurityAuthority.verifyAndConsume(
+        authVerification?.challengeToken,
+        authVerification?.confirmationCode,
+        'delete',
         id
       );
-      throw new Error(`No es posible eliminar el objetivo protegido "${target.title}" sin autorización explícita.`);
+
+      if (!verification.valid) {
+        AuditLogger.log(
+          'reject_unauthorized',
+          `Intento denegado de eliminar el objetivo protegido "${target.title}". Motivo: ${verification.error}`,
+          false,
+          id
+        );
+        throw new Error(verification.error);
+      }
     }
 
     const filtered = goals.filter(g => g.id !== id);
     this.saveGoals(filtered);
-    AuditLogger.log('edit', `Objetivo "${target.title}" eliminado.`, true, id);
+    AuditLogger.log('edit', `Objetivo "${target.title}" eliminado tras verificación de servidor.`, true, id);
     return true;
   }
 }
@@ -451,15 +603,24 @@ Bajo ninguna circunstancia debes violar las prohibiciones ni omitir las instrucc
 // ==========================================
 // 5. ComplianceValidator Service
 // ==========================================
+// ==========================================
+// 5. ComplianceValidator Service
+// ==========================================
 export class ComplianceValidator {
-  private static ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
+  private static getAiClient(): GoogleGenAI | null {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key || key.length < 20 || key === 'MY_GEMINI_API_KEY') {
+      return null;
+    }
+    return new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
       },
-    },
-  });
+    });
+  }
 
   static async validate(
     aiOutput: string, 
@@ -472,7 +633,7 @@ export class ComplianceValidator {
     const violatedProhibitions: string[] = [];
     const omittedInstructions: string[] = [];
 
-    // Check simple lexical triggers
+    // Check lexical triggers
     const lowerOutput = aiOutput.toLowerCase();
     for (const prob of effectiveProhibitions) {
       const lowerProb = prob.toLowerCase();
@@ -498,9 +659,9 @@ export class ComplianceValidator {
       }
     }
 
-    const hasApiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY');
+    const aiClient = this.getAiClient();
 
-    if (hasApiKey) {
+    if (aiClient) {
       try {
         // Semantic deep validation using Gemini Flash with strict 2.5s timeout
         const systemInstruction = `
@@ -548,7 +709,7 @@ ${aiOutput.slice(0, 4000)}
           setTimeout(() => reject(new Error('Validation timeout')), 2500)
         );
 
-        const generatePromise = this.ai.models.generateContent({
+        const generatePromise = aiClient.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: prompt,
           config: {
@@ -569,12 +730,14 @@ ${aiOutput.slice(0, 4000)}
           unmetCriteria: parsed.unmetCriteria || [],
           deviations: parsed.deviations || [],
           recommendation: parsed.recommendation || (allViolated.length > 0 ? 'Corregir violaciones de directivas protegidas.' : 'Cumplimiento nominal verificado.'),
+          evaluationMode: 'semantic_gemini',
+          evaluatorDetails: 'Validador Semántico Profundo Gemini 3.8 Flash',
         };
 
         if (!report.isCompliant) {
           AuditLogger.log(
             'validation_violation',
-            `Incumplimiento detectado en respuesta de IA: ${report.violatedProhibitions.join('; ')}`,
+            `Incumplimiento detectado por evaluador semántico: ${report.violatedProhibitions.join('; ')}`,
             false,
             activeGoal.id
           );
@@ -582,11 +745,11 @@ ${aiOutput.slice(0, 4000)}
 
         return report;
       } catch (e: any) {
-        console.warn('[ComplianceValidator] Deep validation fallback:', e?.message);
+        console.warn('[ComplianceValidator] Fallback activado (error en Gemini API):', e?.message);
       }
     }
 
-    // Heuristic Fallback
+    // Heuristic Fallback - Transparently declared
     const isCompliant = violatedProhibitions.length === 0;
     const report: ComplianceReport = {
       isCompliant,
@@ -596,12 +759,16 @@ ${aiOutput.slice(0, 4000)}
       unmetCriteria: [],
       deviations: isCompliant ? [] : ['Posible discrepancia detectada por el validador heurístico de reglas.'],
       recommendation: isCompliant ? 'Validación heurística básica completada sin infracciones.' : 'Revisar prohibiciones infringidas antes de adoptar el código.',
+      evaluationMode: 'heuristic_fallback',
+      evaluatorDetails: aiClient 
+        ? 'Fallback Heurístico Resiliente (Gemini API no disponible o alcance 403)' 
+        : 'Validador Heurístico Riguroso (GEMINI_API_KEY no presente en entorno)',
     };
 
     if (!isCompliant) {
       AuditLogger.log(
         'validation_violation',
-        `Incumplimiento heurístico detectado: ${violatedProhibitions.join('; ')}`,
+        `Incumplimiento detectado por validador heurístico: ${violatedProhibitions.join('; ')}`,
         false,
         activeGoal.id
       );

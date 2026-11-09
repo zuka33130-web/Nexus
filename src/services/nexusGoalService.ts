@@ -46,15 +46,37 @@ export class NexusGoalService {
     return data.goal;
   }
 
+  static async requestChallenge(
+    action: 'update' | 'delete' | 'global_update' | 'unprotect',
+    goalId?: string,
+    description?: string
+  ): Promise<{ challengeToken: string; confirmationCode: string; expiresAt: number; prompt: string }> {
+    const resp = await fetch('/api/nexus/auth/challenge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, goalId, description }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+    const data = await resp.json();
+    return data.challenge;
+  }
+
   static async updateGoal(
     id: string, 
     updates: Partial<NexusGoal>, 
-    explicitAuthorization: boolean = false
+    authVerification?: { challengeToken?: string; confirmationCode?: string }
   ): Promise<NexusGoal> {
     const resp = await fetch(`/api/nexus/goals/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates, explicitAuthorization }),
+      body: JSON.stringify({ 
+        updates, 
+        challengeToken: authVerification?.challengeToken,
+        confirmationCode: authVerification?.confirmationCode,
+      }),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
@@ -76,9 +98,17 @@ export class NexusGoalService {
     return data.goal;
   }
 
-  static async deleteGoal(id: string, explicitAuthorization: boolean = false): Promise<boolean> {
-    const resp = await fetch(`/api/nexus/goals/${id}?authorized=${explicitAuthorization}`, {
+  static async deleteGoal(
+    id: string, 
+    authVerification?: { challengeToken?: string; confirmationCode?: string }
+  ): Promise<boolean> {
+    const resp = await fetch(`/api/nexus/goals/${id}`, {
       method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        challengeToken: authVerification?.challengeToken,
+        confirmationCode: authVerification?.confirmationCode,
+      }),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
@@ -98,11 +128,18 @@ export class NexusGoalService {
     }
   }
 
-  static async saveGlobalInstructions(globalInstructions: GlobalInstructions, authorized: boolean = true): Promise<GlobalInstructions> {
+  static async saveGlobalInstructions(
+    globalInstructions: GlobalInstructions, 
+    authVerification?: { challengeToken?: string; confirmationCode?: string }
+  ): Promise<GlobalInstructions> {
     const resp = await fetch('/api/nexus/policies/global', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ globalInstructions, authorized }),
+      body: JSON.stringify({ 
+        globalInstructions, 
+        challengeToken: authVerification?.challengeToken,
+        confirmationCode: authVerification?.confirmationCode,
+      }),
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));

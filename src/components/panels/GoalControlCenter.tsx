@@ -30,9 +30,10 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
 
   // Authorization Modal state
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+  const [pendingAction, setPendingAction] = useState<((auth: { challengeToken: string; confirmationCode: string }) => Promise<void>) | null>(null);
   const [authDescription, setAuthDescription] = useState('');
-  const [authConfirmed, setAuthConfirmed] = useState(false);
+  const [serverChallenge, setServerChallenge] = useState<{ challengeToken: string; confirmationCode: string; expiresAt: number; prompt: string } | null>(null);
+  const [userTypedCode, setUserTypedCode] = useState('');
 
   // New Goal Modal state
   const [showNewGoalModal, setShowNewGoalModal] = useState(false);
@@ -94,29 +95,49 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
     }
   };
 
-  // Safe action with authorization protection
-  const requestProtectedAction = (actionDesc: string, actionFn: (authorized: boolean) => Promise<void>, isProtected: boolean) => {
+  // Safe action with server-verified authorization challenge
+  const requestProtectedAction = async (
+    action: 'update' | 'delete' | 'global_update' | 'unprotect',
+    actionDesc: string, 
+    actionFn: (auth?: { challengeToken: string; confirmationCode: string }) => Promise<void>, 
+    isProtected: boolean,
+    goalId?: string
+  ) => {
     if (!isProtected) {
-      actionFn(false).catch((e: any) => triggerNotification(e?.message, true));
+      actionFn().catch((e: any) => triggerNotification(e?.message, true));
       return;
     }
 
-    setAuthDescription(actionDesc);
-    setAuthConfirmed(false);
-    setPendingAction(() => async () => {
-      await actionFn(true);
-    });
-    setShowAuthModal(true);
+    try {
+      const challenge = await NexusGoalService.requestChallenge(action, goalId, actionDesc);
+      setServerChallenge(challenge);
+      setAuthDescription(actionDesc);
+      setUserTypedCode('');
+      setPendingAction(() => async (auth: { challengeToken: string; confirmationCode: string }) => {
+        await actionFn(auth);
+      });
+      setShowAuthModal(true);
+    } catch (err: any) {
+      triggerNotification(`Error al solicitar token de autorización al servidor: ${err?.message}`, true);
+    }
   };
 
   const handleConfirmAuthorization = async () => {
-    if (!authConfirmed || !pendingAction) return;
+    if (!serverChallenge || !pendingAction) return;
+    if (userTypedCode.trim().toUpperCase() !== serverChallenge.confirmationCode.trim().toUpperCase()) {
+      triggerNotification('Código de confirmación incorrecto.', true);
+      return;
+    }
     try {
-      await pendingAction();
+      await pendingAction({
+        challengeToken: serverChallenge.challengeToken,
+        confirmationCode: userTypedCode.trim().toUpperCase(),
+      });
       setShowAuthModal(false);
       setPendingAction(null);
+      setServerChallenge(null);
       await loadAllData();
-      triggerNotification('Modificación protegida autorizada y ejecutada.');
+      triggerNotification('Modificación protegida verificada por el servidor y ejecutada.');
     } catch (e: any) {
       triggerNotification(e?.message || 'Error al ejecutar acción autorizada', true);
     }
@@ -129,18 +150,20 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
     const item = inputProhibition.trim();
 
     requestProtectedAction(
+      'update',
       `Añadir prohibición: "${item}" al objetivo protegido "${activeGoal.title}"`,
-      async (authorized) => {
+      async (auth) => {
         await NexusGoalService.updateGoal(
           activeGoal.id,
           { prohibitions: [...activeGoal.prohibitions, item] },
-          authorized
+          auth
         );
         setInputProhibition('');
         await loadAllData();
         triggerNotification('Prohibición añadida.');
       },
-      activeGoal.isProtected
+      activeGoal.isProtected,
+      activeGoal.id
     );
   };
 
@@ -150,13 +173,15 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
     const updated = activeGoal.prohibitions.filter((_, i) => i !== index);
 
     requestProtectedAction(
+      'update',
       `Eliminar la prohibición: "${item}" del objetivo protegido "${activeGoal.title}"`,
-      async (authorized) => {
-        await NexusGoalService.updateGoal(activeGoal.id, { prohibitions: updated }, authorized);
+      async (auth) => {
+        await NexusGoalService.updateGoal(activeGoal.id, { prohibitions: updated }, auth);
         await loadAllData();
         triggerNotification('Prohibición eliminada.');
       },
-      activeGoal.isProtected
+      activeGoal.isProtected,
+      activeGoal.id
     );
   };
 
@@ -166,18 +191,20 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
     const item = inputMandatory.trim();
 
     requestProtectedAction(
+      'update',
       `Añadir instrucción obligatoria: "${item}"`,
-      async (authorized) => {
+      async (auth) => {
         await NexusGoalService.updateGoal(
           activeGoal.id,
           { mandatoryInstructions: [...activeGoal.mandatoryInstructions, item] },
-          authorized
+          auth
         );
         setInputMandatory('');
         await loadAllData();
         triggerNotification('Instrucción obligatoria registrada.');
       },
-      activeGoal.isProtected
+      activeGoal.isProtected,
+      activeGoal.id
     );
   };
 
@@ -187,13 +214,15 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
     const updated = activeGoal.mandatoryInstructions.filter((_, i) => i !== index);
 
     requestProtectedAction(
+      'update',
       `Eliminar instrucción obligatoria: "${item}"`,
-      async (authorized) => {
-        await NexusGoalService.updateGoal(activeGoal.id, { mandatoryInstructions: updated }, authorized);
+      async (auth) => {
+        await NexusGoalService.updateGoal(activeGoal.id, { mandatoryInstructions: updated }, auth);
         await loadAllData();
         triggerNotification('Instrucción obligatoria eliminada.');
       },
-      activeGoal.isProtected
+      activeGoal.isProtected,
+      activeGoal.id
     );
   };
 
@@ -203,18 +232,20 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
     const item = inputCriterion.trim();
 
     requestProtectedAction(
+      'update',
       `Añadir criterio de éxito: "${item}"`,
-      async (authorized) => {
+      async (auth) => {
         await NexusGoalService.updateGoal(
           activeGoal.id,
           { successCriteria: [...activeGoal.successCriteria, item] },
-          authorized
+          auth
         );
         setInputCriterion('');
         await loadAllData();
         triggerNotification('Criterio de éxito registrado.');
       },
-      activeGoal.isProtected
+      activeGoal.isProtected,
+      activeGoal.id
     );
   };
 
@@ -235,13 +266,15 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
     const newProtection = !activeGoal.isProtected;
 
     requestProtectedAction(
+      newProtection ? 'update' : 'unprotect',
       `${newProtection ? 'Activar' : 'Desactivar'} protección inmutable del objetivo "${activeGoal.title}"`,
-      async (authorized) => {
-        await NexusGoalService.updateGoal(activeGoal.id, { isProtected: newProtection }, authorized);
+      async (auth) => {
+        await NexusGoalService.updateGoal(activeGoal.id, { isProtected: newProtection }, auth);
         await loadAllData();
         triggerNotification(`Protección ${newProtection ? 'activada' : 'desactivada'}.`);
       },
-      activeGoal.isProtected // require authorization if currently protected!
+      activeGoal.isProtected, // require authorization if currently protected!
+      activeGoal.id
     );
   };
 
@@ -789,33 +822,51 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
       </div>
 
       {/* ================= MODAL: AUTHORIZE PROTECTED MODIFICATION ================= */}
-      {showAuthModal && (
+      {showAuthModal && serverChallenge && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4 select-none">
           <div className="bg-slate-900 border border-amber-800/80 rounded-2xl max-w-md w-full shadow-2xl p-5 space-y-4 text-slate-100">
             <div className="flex items-center gap-2.5 text-amber-400">
               <Key className="w-5 h-5" />
-              <h3 className="text-sm font-bold">Autorización Explícita Requerida</h3>
+              <h3 className="text-sm font-bold">Autorización Verificable en Servidor</h3>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              La regla que intentas modificar o eliminar está bajo <strong className="text-white">PROTECCIÓN INMUTABLE</strong>.
+              La regla está bajo <strong className="text-white">PROTECCIÓN INMUTABLE</strong>. El servidor ha emitido un desafío criptográfico de un solo uso (TTL: 120s).
             </p>
 
             <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-[11px] text-amber-200">
               {authDescription}
             </div>
 
-            <label className="flex items-start gap-2.5 p-2 bg-slate-950/50 rounded-lg border border-slate-800/80 cursor-pointer">
+            {/* Server-Issued Challenge Code Box */}
+            <div className="p-3 bg-slate-950/90 rounded-xl border border-amber-900/60 space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-slate-400">
+                <span>Código Emitido por el Servidor:</span>
+                <button
+                  type="button"
+                  onClick={() => setUserTypedCode(serverChallenge.confirmationCode)}
+                  className="text-emerald-400 hover:text-emerald-300 text-[10px] font-mono underline"
+                >
+                  Autocompletar
+                </button>
+              </div>
+              <div className="font-mono text-sm font-bold text-emerald-400 bg-slate-900 p-2 rounded border border-emerald-800/80 tracking-wider text-center select-text">
+                {serverChallenge.confirmationCode}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 block">
+                Introduce el código exacto para validar la autorización en el servidor:
+              </label>
               <input
-                type="checkbox"
-                checked={authConfirmed}
-                onChange={(e) => setAuthConfirmed(e.target.checked)}
-                className="mt-0.5 accent-amber-500"
+                type="text"
+                value={userTypedCode}
+                onChange={(e) => setUserTypedCode(e.target.value.toUpperCase())}
+                placeholder={serverChallenge.confirmationCode}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-amber-500"
               />
-              <span className="text-[11px] text-slate-300">
-                Confirmo explícitamente como usuario autorizado la alteración de esta directiva protegida.
-              </span>
-            </label>
+            </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <button
@@ -823,6 +874,7 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
                 onClick={() => {
                   setShowAuthModal(false);
                   setPendingAction(null);
+                  setServerChallenge(null);
                 }}
                 className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
               >
@@ -830,12 +882,12 @@ export const GoalControlCenter: React.FC<GoalControlCenterProps> = ({ onGoalUpda
               </button>
               <button
                 type="button"
-                disabled={!authConfirmed}
+                disabled={userTypedCode.trim().toUpperCase() !== serverChallenge.confirmationCode.trim().toUpperCase()}
                 onClick={handleConfirmAuthorization}
-                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
+                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:hover:bg-amber-600 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
                 <Check className="w-3.5 h-3.5" />
-                <span>Autorizar y Ejecutar</span>
+                <span>Verificar y Ejecutar en Servidor</span>
               </button>
             </div>
           </div>

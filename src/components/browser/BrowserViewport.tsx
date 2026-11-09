@@ -462,7 +462,9 @@ Responde con máxima precisión y profesionalismo.`,
                               <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
                               <span>NEXUS: Cumplimiento Verificado ({Math.round(msg.complianceReport.score * 100)}%)</span>
                             </span>
-                            <span className="text-[9px] text-slate-500 uppercase">Validador Activo</span>
+                            <span className="text-[9px] text-slate-400 uppercase font-mono">
+                              {msg.complianceReport.evaluationMode === 'semantic_gemini' ? '🧠 Semántico (Gemini)' : '⚙️ Heurístico (Reglas)'}
+                            </span>
                           </div>
                         ) : (
                           <div className="p-2.5 bg-amber-950/40 border border-amber-800/60 rounded-lg text-amber-200 space-y-1.5">
@@ -471,9 +473,14 @@ Responde con máxima precisión y profesionalismo.`,
                                 <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
                                 <span>NEXUS: Desviación de Objetivo / Prohibición</span>
                               </div>
-                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300">
-                                Score: {Math.round(msg.complianceReport.score * 100)}%
-                              </span>
+                              <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                                <span className="text-slate-400">
+                                  {msg.complianceReport.evaluationMode === 'semantic_gemini' ? '🧠 Semántico' : '⚙️ Heurístico'}
+                                </span>
+                                <span className="px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300">
+                                  Score: {Math.round(msg.complianceReport.score * 100)}%
+                                </span>
+                              </div>
                             </div>
 
                             {msg.complianceReport.violatedProhibitions && msg.complianceReport.violatedProhibitions.length > 0 && (
