@@ -21,7 +21,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -447,26 +447,36 @@ ${rawPrompt}
 NIVEL DE AUTONOMÍA: ${autonomyLevel || 'assistance'}
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: userContent,
-      config: {
-        systemInstruction,
-        responseMimeType: 'application/json',
-      },
-    });
-
-    const jsonText = response.text || '{}';
     let parsedResult;
-    try {
-      parsedResult = JSON.parse(jsonText);
-    } catch {
+    const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 20 && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY');
+
+    if (hasKey) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: userContent,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+          },
+        });
+
+        const jsonText = response.text || '{}';
+        parsedResult = JSON.parse(jsonText);
+      } catch (e: any) {
+        console.warn('[Mediation Input Fallback] Gemini error:', e?.message);
+      }
+    }
+
+    if (!parsedResult) {
+      // Heuristic fallback for prompt optimization
+      const enrichedConstraints = constraints !== 'Ninguna especificada' ? `\nRestricciones: ${constraints}` : '';
       parsedResult = {
-        clarifiedIntent: 'Consulta directa',
-        optimizedPrompt: rawPrompt,
-        reasonForIntervention: 'Sin cambios requeridos',
+        clarifiedIntent: 'Optimización Heurística',
+        optimizedPrompt: `${rawPrompt}${enrichedConstraints}\n\n[Nota: Mediación heurística aplicada por ausencia de API Key]`,
+        reasonForIntervention: 'Modo de compatibilidad heurística activo',
         rawTokensEstimated: Math.ceil(rawPrompt.length / 4),
-        optimizedTokensEstimated: Math.ceil(rawPrompt.length / 4),
+        optimizedTokensEstimated: Math.ceil((rawPrompt.length + enrichedConstraints.length) / 4),
         savingsPct: 0,
       };
     }
@@ -531,16 +541,42 @@ ${typeof rawOutput === 'string' ? rawOutput.slice(0, 4000) : JSON.stringify(rawO
 """
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: userContent,
-      config: {
-        systemInstruction,
-        responseMimeType: 'application/json',
-      },
-    });
+    let parsed;
+    const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 20 && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY');
 
-    const parsed = JSON.parse(response.text || '{}');
+    if (hasKey) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: userContent,
+          config: {
+            systemInstruction,
+            responseMimeType: 'application/json',
+          },
+        });
+
+        parsed = JSON.parse(response.text || '{}');
+      } catch (e: any) {
+        console.warn('[Mediation Output Fallback] Gemini error:', e?.message);
+      }
+    }
+
+    if (!parsed) {
+      // Heuristic loop detection
+      const lastReply = pastTurns.length > 0 ? pastTurns[pastTurns.length - 1].content : '';
+      const isRepetitive = lastReply && rawOutput.includes(lastReply.slice(0, 50));
+
+      parsed = {
+        isLoop: Boolean(isRepetitive),
+        confidence: isRepetitive ? 0.7 : 0,
+        reason: isRepetitive ? 'Detección heurística de repetición de texto.' : '',
+        repetitionCount: isRepetitive ? 1 : 0,
+        violatesConstraints: false,
+        violatedConstraintsList: [],
+        suggestedBreakout: isRepetitive ? 'Parece que estás repitiendo la respuesta. Por favor, intenta un enfoque diferente.' : ''
+      };
+    }
+
     res.json({
       success: true,
       loopAnalysis: parsed,
@@ -573,15 +609,30 @@ OBJETIVO DEL PROYECTO: ${projectGoals || 'Resolver la tarea sin repetir el error
 Genera el mensaje correctivo "Break-the-Loop" que el usuario enviará a la IA. Sé directo, técnico y prohíbe explícitamente reintentar la estrategia fallida.
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: prompt,
-      config: { systemInstruction },
-    });
+    let breakoutPrompt = '';
+    const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 20 && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY');
+
+    if (hasKey) {
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+          config: { systemInstruction },
+        });
+
+        breakoutPrompt = response.text?.trim() || '';
+      } catch (e: any) {
+        console.warn('[Break Loop Fallback] Gemini error:', e?.message);
+      }
+    }
+
+    if (!breakoutPrompt) {
+      breakoutPrompt = `DETENER BUCLE: Se detectó repetición sobre "${failedSolution.slice(0, 50)}...". Abandona este camino y resuelve el objetivo "${projectGoals}" usando un método alternativo.`;
+    }
 
     res.json({
       success: true,
-      breakoutPrompt: response.text?.trim() || 'Detén este enfoque repetitivo. Analicemos la causa raíz desde una perspectiva diferente.',
+      breakoutPrompt,
     });
   } catch (error: any) {
     res.status(500).json({ error: error?.message || 'Error generating breakout' });

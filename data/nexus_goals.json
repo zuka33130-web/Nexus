@@ -15,9 +15,8 @@
       "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
     ],
     "constraints": [
-      "Latencia < 50ms",
-      "Inmutabilidad estricta",
-      "Audit logging continuo"
+      "Latencia estricta < 50ms",
+      "Auditoría obligatoria verificada"
     ],
     "successCriteria": [
       "Cero violaciones de prohibiciones en respuestas de IA.",
@@ -25,11 +24,107 @@
       "Registro inalterable de cada conflicto y modificación en el Audit Logger."
     ],
     "status": "active",
-    "version": 2,
+    "version": 6,
     "createdAt": 1794127236081,
-    "updatedAt": 1794213816948,
+    "updatedAt": 1794214903036,
     "isProtected": true,
     "scope": "global",
     "explicitAuthorization": true
+  },
+  {
+    "title": "Objetivo de Prueba Persistencia 1794214700056",
+    "description": "Prueba de persistencia real en disco para validación de reinicios.",
+    "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+    "prohibitions": [
+      "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+    ],
+    "mandatoryInstructions": [
+      "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+    ],
+    "constraints": [
+      "Almacenamiento en /data/nexus_goals.json"
+    ],
+    "successCriteria": [
+      "Datos leídos idénticos a los guardados"
+    ],
+    "isProtected": true,
+    "scope": "project_specific",
+    "id": "goal_1794214700059",
+    "createdAt": 1794214700059,
+    "updatedAt": 1794214700070,
+    "version": 2,
+    "status": "draft"
+  },
+  {
+    "title": "Objetivo de Prueba Persistencia 1794214738683",
+    "description": "Prueba de persistencia real en disco para validación de reinicios.",
+    "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+    "prohibitions": [
+      "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+    ],
+    "mandatoryInstructions": [
+      "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+    ],
+    "constraints": [
+      "Almacenamiento en /data/nexus_goals.json"
+    ],
+    "successCriteria": [
+      "Datos leídos idénticos a los guardados"
+    ],
+    "isProtected": true,
+    "scope": "project_specific",
+    "id": "goal_1794214738686",
+    "createdAt": 1794214738686,
+    "updatedAt": 1794214738701,
+    "version": 2,
+    "status": "draft"
+  },
+  {
+    "title": "Objetivo de Prueba Persistencia 1794214837454",
+    "description": "Prueba de persistencia real en disco para validación de reinicios.",
+    "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+    "prohibitions": [
+      "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+    ],
+    "mandatoryInstructions": [
+      "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+    ],
+    "constraints": [
+      "Almacenamiento en /data/nexus_goals.json"
+    ],
+    "successCriteria": [
+      "Datos leídos idénticos a los guardados"
+    ],
+    "isProtected": true,
+    "scope": "project_specific",
+    "id": "goal_1794214837457",
+    "createdAt": 1794214837457,
+    "updatedAt": 1794214837469,
+    "version": 2,
+    "status": "draft"
+  },
+  {
+    "title": "Objetivo de Prueba Persistencia 1794214903039",
+    "description": "Prueba de persistencia real en disco para validación de reinicios.",
+    "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+    "prohibitions": [
+      "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+    ],
+    "mandatoryInstructions": [
+      "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+    ],
+    "constraints": [
+      "Almacenamiento en /data/nexus_goals.json"
+    ],
+    "successCriteria": [
+      "Datos leídos idénticos a los guardados"
+    ],
+    "isProtected": true,
+    "scope": "project_specific",
+    "id": "goal_1794214903043",
+    "createdAt": 1794214903043,
+    "updatedAt": 1794214903063,
+    "version": 2,
+    "status": "draft"
   }
 ]

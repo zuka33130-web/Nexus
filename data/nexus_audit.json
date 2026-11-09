@@ -1,5 +1,983 @@
 [
   {
+    "id": "audit_1794214903086_q5v8",
+    "timestamp": 1794214903086,
+    "action": "context_injected",
+    "details": "[STREAM SSE] Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v6) inyectadas antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903081_o3gw",
+    "timestamp": 1794214903081,
+    "action": "validation_violation",
+    "details": "Incumplimiento detectado por validador heurístico: No alterar el objetivo principal sin autorización explícita.; No omitir ninguna de las restricciones estrictas del usuario.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903063_9hz1",
+    "timestamp": 1794214903063,
+    "action": "edit",
+    "details": "Objetivo protegido \"Objetivo de Prueba Persistencia 1794214903039\" actualizado con verificación de servidor a versión 2.",
+    "authorized": true,
+    "goalId": "goal_1794214903043",
+    "diff": {
+      "before": {
+        "title": "Objetivo de Prueba Persistencia 1794214903039",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra tras reinicio.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214903043",
+        "createdAt": 1794214903043,
+        "updatedAt": 1794214903043,
+        "version": 1,
+        "status": "draft"
+      },
+      "after": {
+        "title": "Objetivo de Prueba Persistencia 1794214903039",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214903043",
+        "createdAt": 1794214903043,
+        "updatedAt": 1794214903063,
+        "version": 2,
+        "status": "draft"
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903062_bamx",
+    "timestamp": 1794214903062,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_1794214903043).",
+    "authorized": true,
+    "goalId": "goal_1794214903043",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903052_27t8",
+    "timestamp": 1794214903052,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_1794214903043). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_1794214903043",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903043_kuqj",
+    "timestamp": 1794214903043,
+    "action": "create",
+    "details": "Objetivo creado: \"Objetivo de Prueba Persistencia 1794214903039\"",
+    "authorized": true,
+    "goalId": "goal_1794214903043",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903036_11pl",
+    "timestamp": 1794214903036,
+    "action": "edit",
+    "details": "Objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" actualizado con verificación de servidor a versión 6.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "diff": {
+      "before": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia estricta < 50ms",
+          "Auditoría obligatoria verificada"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 5,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794214837453,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      },
+      "after": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia estricta < 50ms",
+          "Auditoría obligatoria verificada"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 6,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794214903036,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903035_d9aq",
+    "timestamp": 1794214903035,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_nexus_core).",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903029_sf3r",
+    "timestamp": 1794214903029,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903022_9ljg",
+    "timestamp": 1794214903022,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Código de confirmación inválido. Se esperaba \"CONFIRM-UPDATE-96ACB9\".",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903015_zdne",
+    "timestamp": 1794214903015,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214903009_al4w",
+    "timestamp": 1794214903009,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: El challengeToken no existe o ya fue consumido.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214902980_hdzv",
+    "timestamp": 1794214902980,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Falta el challengeToken emitido por el servidor. Las solicitudes con indicadores booleanos falsificados (explicitAuthorization: true) son rechazadas.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214902958_yr21",
+    "timestamp": 1794214902958,
+    "action": "context_injected",
+    "details": "Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v5) inyectadas automáticamente antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214842499_wwph",
+    "timestamp": 1794214842499,
+    "action": "context_injected",
+    "details": "[STREAM SSE] Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v5) inyectadas antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214842492_x91h",
+    "timestamp": 1794214842492,
+    "action": "validation_violation",
+    "details": "Incumplimiento detectado por validador heurístico: No alterar el objetivo principal sin autorización explícita.; No omitir ninguna de las restricciones estrictas del usuario.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837469_vkh1",
+    "timestamp": 1794214837469,
+    "action": "edit",
+    "details": "Objetivo protegido \"Objetivo de Prueba Persistencia 1794214837454\" actualizado con verificación de servidor a versión 2.",
+    "authorized": true,
+    "goalId": "goal_1794214837457",
+    "diff": {
+      "before": {
+        "title": "Objetivo de Prueba Persistencia 1794214837454",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra tras reinicio.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214837457",
+        "createdAt": 1794214837457,
+        "updatedAt": 1794214837457,
+        "version": 1,
+        "status": "draft"
+      },
+      "after": {
+        "title": "Objetivo de Prueba Persistencia 1794214837454",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214837457",
+        "createdAt": 1794214837457,
+        "updatedAt": 1794214837469,
+        "version": 2,
+        "status": "draft"
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837468_t2b4",
+    "timestamp": 1794214837468,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_1794214837457).",
+    "authorized": true,
+    "goalId": "goal_1794214837457",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837463_r78z",
+    "timestamp": 1794214837463,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_1794214837457). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_1794214837457",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837457_d9pw",
+    "timestamp": 1794214837457,
+    "action": "create",
+    "details": "Objetivo creado: \"Objetivo de Prueba Persistencia 1794214837454\"",
+    "authorized": true,
+    "goalId": "goal_1794214837457",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837453_pw3m",
+    "timestamp": 1794214837453,
+    "action": "edit",
+    "details": "Objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" actualizado con verificación de servidor a versión 5.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "diff": {
+      "before": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia estricta < 50ms",
+          "Auditoría obligatoria verificada"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 4,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794214738681,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      },
+      "after": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia estricta < 50ms",
+          "Auditoría obligatoria verificada"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 5,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794214837453,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837452_qn1r",
+    "timestamp": 1794214837452,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_nexus_core).",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837447_snk1",
+    "timestamp": 1794214837447,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837443_6ie3",
+    "timestamp": 1794214837443,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Código de confirmación inválido. Se esperaba \"CONFIRM-UPDATE-3D66F8\".",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837438_eqsp",
+    "timestamp": 1794214837438,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837432_tfnv",
+    "timestamp": 1794214837432,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: El challengeToken no existe o ya fue consumido.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214837426_cm7v",
+    "timestamp": 1794214837426,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Falta el challengeToken emitido por el servidor. Las solicitudes con indicadores booleanos falsificados (explicitAuthorization: true) son rechazadas.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214783514_fofz",
+    "timestamp": 1794214783514,
+    "action": "context_injected",
+    "details": "Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v4) inyectadas automáticamente antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214766192_gcc2",
+    "timestamp": 1794214766192,
+    "action": "context_injected",
+    "details": "Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v4) inyectadas automáticamente antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738975_g1zr",
+    "timestamp": 1794214738975,
+    "action": "context_injected",
+    "details": "[STREAM SSE] Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v4) inyectadas antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738970_aixu",
+    "timestamp": 1794214738970,
+    "action": "validation_violation",
+    "details": "Incumplimiento detectado por validador heurístico: No alterar el objetivo principal sin autorización explícita.; No omitir ninguna de las restricciones estrictas del usuario.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738701_7x83",
+    "timestamp": 1794214738701,
+    "action": "edit",
+    "details": "Objetivo protegido \"Objetivo de Prueba Persistencia 1794214738683\" actualizado con verificación de servidor a versión 2.",
+    "authorized": true,
+    "goalId": "goal_1794214738686",
+    "diff": {
+      "before": {
+        "title": "Objetivo de Prueba Persistencia 1794214738683",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra tras reinicio.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214738686",
+        "createdAt": 1794214738686,
+        "updatedAt": 1794214738686,
+        "version": 1,
+        "status": "draft"
+      },
+      "after": {
+        "title": "Objetivo de Prueba Persistencia 1794214738683",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214738686",
+        "createdAt": 1794214738686,
+        "updatedAt": 1794214738701,
+        "version": 2,
+        "status": "draft"
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738701_ist1",
+    "timestamp": 1794214738701,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_1794214738686).",
+    "authorized": true,
+    "goalId": "goal_1794214738686",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738691_irhe",
+    "timestamp": 1794214738691,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_1794214738686). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_1794214738686",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738686_u45j",
+    "timestamp": 1794214738686,
+    "action": "create",
+    "details": "Objetivo creado: \"Objetivo de Prueba Persistencia 1794214738683\"",
+    "authorized": true,
+    "goalId": "goal_1794214738686",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738681_jzxk",
+    "timestamp": 1794214738681,
+    "action": "edit",
+    "details": "Objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" actualizado con verificación de servidor a versión 4.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "diff": {
+      "before": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia estricta < 50ms",
+          "Auditoría obligatoria verificada"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 3,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794214700055,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      },
+      "after": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia estricta < 50ms",
+          "Auditoría obligatoria verificada"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 4,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794214738681,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738681_nh02",
+    "timestamp": 1794214738681,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_nexus_core).",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738676_7qme",
+    "timestamp": 1794214738676,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738671_lkbo",
+    "timestamp": 1794214738671,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Código de confirmación inválido. Se esperaba \"CONFIRM-UPDATE-77704E\".",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738666_4544",
+    "timestamp": 1794214738666,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738661_ago6",
+    "timestamp": 1794214738661,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: El challengeToken no existe o ya fue consumido.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738654_msux",
+    "timestamp": 1794214738654,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Falta el challengeToken emitido por el servidor. Las solicitudes con indicadores booleanos falsificados (explicitAuthorization: true) son rechazadas.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214738376_ytzc",
+    "timestamp": 1794214738376,
+    "action": "context_injected",
+    "details": "Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v3) inyectadas automáticamente antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214702708_agdp",
+    "timestamp": 1794214702708,
+    "action": "context_injected",
+    "details": "[STREAM SSE] Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v3) inyectadas antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214702703_utvw",
+    "timestamp": 1794214702703,
+    "action": "validation_violation",
+    "details": "Incumplimiento detectado por validador heurístico: No alterar el objetivo principal sin autorización explícita.; No omitir ninguna de las restricciones estrictas del usuario.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700070_0uyw",
+    "timestamp": 1794214700070,
+    "action": "edit",
+    "details": "Objetivo protegido \"Objetivo de Prueba Persistencia 1794214700056\" actualizado con verificación de servidor a versión 2.",
+    "authorized": true,
+    "goalId": "goal_1794214700059",
+    "diff": {
+      "before": {
+        "title": "Objetivo de Prueba Persistencia 1794214700056",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra tras reinicio.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214700059",
+        "createdAt": 1794214700059,
+        "updatedAt": 1794214700059,
+        "version": 1,
+        "status": "draft"
+      },
+      "after": {
+        "title": "Objetivo de Prueba Persistencia 1794214700056",
+        "description": "Prueba de persistencia real en disco para validación de reinicios.",
+        "expectedOutcome": "Recuperación íntegra verificada en versión 2.",
+        "prohibitions": [
+          "PROHIBICIÓN TEST PERSISTENCIA: No borrar datos sin autorización."
+        ],
+        "mandatoryInstructions": [
+          "OBLIGATORIO TEST PERSISTENCIA: Mantener inmutabilidad."
+        ],
+        "constraints": [
+          "Almacenamiento en /data/nexus_goals.json"
+        ],
+        "successCriteria": [
+          "Datos leídos idénticos a los guardados"
+        ],
+        "isProtected": true,
+        "scope": "project_specific",
+        "id": "goal_1794214700059",
+        "createdAt": 1794214700059,
+        "updatedAt": 1794214700070,
+        "version": 2,
+        "status": "draft"
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700070_7k97",
+    "timestamp": 1794214700070,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_1794214700059).",
+    "authorized": true,
+    "goalId": "goal_1794214700059",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700065_42iq",
+    "timestamp": 1794214700065,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_1794214700059). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_1794214700059",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700059_yquu",
+    "timestamp": 1794214700059,
+    "action": "create",
+    "details": "Objetivo creado: \"Objetivo de Prueba Persistencia 1794214700056\"",
+    "authorized": true,
+    "goalId": "goal_1794214700059",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700055_ne5v",
+    "timestamp": 1794214700055,
+    "action": "edit",
+    "details": "Objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" actualizado con verificación de servidor a versión 3.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "diff": {
+      "before": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia < 50ms",
+          "Inmutabilidad estricta",
+          "Audit logging continuo"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 2,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794213816948,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      },
+      "after": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia estricta < 50ms",
+          "Auditoría obligatoria verificada"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 3,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794214700055,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700054_4lrz",
+    "timestamp": 1794214700054,
+    "action": "challenge_verified",
+    "details": "Desafío verificado y consumido exitosamente para acción update (goal_nexus_core).",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700050_k341",
+    "timestamp": 1794214700050,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700045_r5i7",
+    "timestamp": 1794214700045,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Código de confirmación inválido. Se esperaba \"CONFIRM-UPDATE-BA8D96\".",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700040_9mba",
+    "timestamp": 1794214700040,
+    "action": "challenge_issued",
+    "details": "Desafío de autorización de servidor generado para update (goal_nexus_core). Expira en 120s.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700035_z5uj",
+    "timestamp": 1794214700035,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: El challengeToken no existe o ya fue consumido.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214700031_5rrv",
+    "timestamp": 1794214700031,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\". Motivo: AUTORIZACIÓN DENEGADA: Falta el challengeToken emitido por el servidor. Las solicitudes con indicadores booleanos falsificados (explicitAuthorization: true) son rechazadas.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794214670977_tz05",
+    "timestamp": 1794214670977,
+    "action": "context_injected",
+    "details": "Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v2) inyectadas automáticamente antes del despacho.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
     "id": "audit_1794213816948_i4xy",
     "timestamp": 1794213816948,
     "action": "edit",

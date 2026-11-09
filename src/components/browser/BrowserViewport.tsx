@@ -107,7 +107,7 @@ export const BrowserViewport: React.FC<BrowserViewportProps> = ({
     setIsGenerating(true);
 
     try {
-      const resp = await fetch('/api/ai/direct-chat', {
+      const resp = await fetch('/api/ai/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,24 +124,55 @@ Responde con máxima precisión y profesionalismo.`,
       });
 
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const data = await resp.json();
-      const replyText = data.reply || 'Sin respuesta';
+      
+      const reader = resp.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedReply = '';
+      let complianceReport: ComplianceReport | undefined;
 
-      onStreamChunk(replyText, workstationPlatform);
-      onStreamComplete(replyText, workstationPlatform);
+      if (!reader) throw new Error('ReadableStream not supported');
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.slice(6));
+              if (event.type === 'START') {
+                console.log('[EVO Stream] Session started with goal:', event.activeGoal?.title);
+              } else if (event.type === 'CHUNK') {
+                const text = event.text || '';
+                accumulatedReply += text;
+                onStreamChunk(text, workstationPlatform);
+              } else if (event.type === 'COMPLIANCE_EVALUATION') {
+                complianceReport = event.report;
+              } else if (event.type === 'DONE') {
+                onStreamComplete(accumulatedReply, workstationPlatform);
+              }
+            } catch (e) {
+              // Ignore parse errors from partial chunks
+            }
+          }
+        }
+      }
 
       const isRepeated = chatMessages.some(
-        m => m.role === 'assistant' && m.content.slice(0, 100) === replyText.slice(0, 100)
+        m => m.role === 'assistant' && m.content.slice(0, 100) === accumulatedReply.slice(0, 100)
       );
 
       const assistantMsg = {
         id: 'msg_' + (Date.now() + 1),
         role: 'assistant' as const,
-        content: replyText,
+        content: accumulatedReply,
         timestamp: Date.now(),
         platform: workstationPlatform,
-        tokenCount: Math.ceil(replyText.length / 4),
-        complianceReport: data.complianceReport,
+        tokenCount: Math.ceil(accumulatedReply.length / 4),
+        complianceReport: complianceReport,
         loopWarning: isRepeated ? {
           isLoop: true,
           confidence: 0.95,
