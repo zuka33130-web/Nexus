@@ -100,6 +100,9 @@ export default function App() {
   const [curtainAnalysis, setCurtainAnalysis] = useState<MediationAnalysisResult | null>(null);
   const [curtainRawPrompt, setCurtainRawPrompt] = useState('');
   const [curtainPlatform, setCurtainPlatform] = useState<AIPlatform>('chatgpt');
+  const [curtainSource, setCurtainSource] = useState<'proxy' | 'workstation'>('workstation');
+  const [pendingEventId, setPendingEventId] = useState<string | null>(null);
+  const [approvedWorkstationPrompt, setApprovedWorkstationPrompt] = useState<{ prompt: string; id: number } | null>(null);
 
   // Save tabs on change
   useEffect(() => {
@@ -319,14 +322,19 @@ export default function App() {
   // INTERCEPTION & MEDIATION HOOKS
   // -----------------------------------------------------------------
 
-  const handleInterceptInput = async (rawPrompt: string, platform: AIPlatform) => {
-    console.log('[EVO Host] Input captured:', rawPrompt, 'on platform:', platform);
+  const handleInterceptInput = async (
+    rawPrompt: string, 
+    platform: AIPlatform, 
+    source: 'proxy' | 'workstation' = 'workstation'
+  ) => {
+    console.log(`[EVO Host] Input captured from ${source}:`, rawPrompt, 'on platform:', platform);
 
-    // Analyze with mediation service
+    // 1. Execute MediationService.analyzeInput() BEFORE allowing any dispatch
     const analysis = await MediationService.analyzeInput(rawPrompt, activeProject, settings.mediationLevel);
 
+    const eventId = 'evt_in_' + Date.now();
     const event: InterceptionEvent = {
-      id: 'evt_in_' + Date.now(),
+      id: eventId,
       timestamp: Date.now(),
       tabId: activeTabId,
       type: 'input',
@@ -350,12 +358,31 @@ export default function App() {
     EvoMemoryStorageService.addInterception(event);
     setInterceptions(EvoMemoryStorageService.getInterceptions());
 
-    // If in Asistencia mode, trigger interactive preview curtain
+    // 2. In assistance mode: HALT execution, display optimized proposal and wait for explicit user approval
     if (settings.mediationLevel === 'assistance') {
       setCurtainAnalysis(analysis);
       setCurtainRawPrompt(rawPrompt);
       setCurtainPlatform(platform);
+      setCurtainSource(source);
+      setPendingEventId(eventId);
       setCurtainOpen(true);
+      return;
+    }
+
+    // 3. In mediation / autonomous mode: auto-dispatch exclusively the optimized prompt!
+    if (settings.mediationLevel === 'mediation' || settings.mediationLevel === 'autonomous') {
+      dispatchApprovedPrompt(analysis.optimizedPrompt, source);
+      return;
+    }
+
+    // 4. In observation mode: pass original prompt without alteration
+    if (settings.mediationLevel === 'observation') {
+      if (source === 'proxy') {
+        const iframe = document.querySelector('iframe');
+        if (iframe && iframe.contentWindow) {
+          MediationService.dispatchToBridge(iframe.contentWindow, rawPrompt, true);
+        }
+      }
     }
   };
 
@@ -403,15 +430,60 @@ export default function App() {
     }
   };
 
-  // Dispatch from curtain or sidebar
+  // Dispatch approved prompt to the correct target (Workstation or Web Proxy bridge)
+  const dispatchApprovedPrompt = (finalPrompt: string, source: 'proxy' | 'workstation') => {
+    console.log(`[EVO Host] Dispatching exclusively approved prompt to ${source}:`, finalPrompt);
+    if (source === 'workstation') {
+      setApprovedWorkstationPrompt({ prompt: finalPrompt, id: Date.now() });
+    } else {
+      const iframe = document.querySelector('iframe');
+      if (iframe && iframe.contentWindow) {
+        MediationService.dispatchToBridge(iframe.contentWindow, finalPrompt, true);
+      }
+    }
+  };
+
+  // Called when user clicks "Aprobar y Despachar a la IA" in the curtain
   const handleApproveAndDispatchPrompt = (finalPrompt: string) => {
-    console.log('[EVO Host] Dispatching prompt to bridge:', finalPrompt);
-    // Find iframe window if in proxy mode
-    const iframe = document.querySelector('iframe');
-    if (iframe && iframe.contentWindow) {
-      MediationService.dispatchToBridge(iframe.contentWindow, finalPrompt, true);
+    if (pendingEventId) {
+      EvoMemoryStorageService.updateInterception(pendingEventId, {
+        status: 'approved',
+        enrichedContent: finalPrompt,
+      });
+      setInterceptions(EvoMemoryStorageService.getInterceptions());
+    }
+    dispatchApprovedPrompt(finalPrompt, curtainSource);
+    setCurtainOpen(false);
+    setPendingEventId(null);
+  };
+
+  // Called when user clicks "Cancelar" in the curtain: DO NOT SEND ANY MESSAGE!
+  const handleCancelPrompt = () => {
+    console.log('[EVO Host] User cancelled mediation. No prompt will be sent.');
+    if (pendingEventId) {
+      EvoMemoryStorageService.updateInterception(pendingEventId, { status: 'rejected' });
+      setInterceptions(EvoMemoryStorageService.getInterceptions());
+    }
+    if (curtainSource === 'proxy') {
+      const iframe = document.querySelector('iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ target: 'EVO_BRIDGE', action: 'CANCEL_PENDING_PROMPT' }, '*');
+      }
     }
     setCurtainOpen(false);
+    setPendingEventId(null);
+  };
+
+  // Called when user clicks "Enviar Original Sin Cambios"
+  const handleSendOriginal = () => {
+    console.log('[EVO Host] User chose to send original prompt.');
+    if (pendingEventId) {
+      EvoMemoryStorageService.updateInterception(pendingEventId, { status: 'approved' });
+      setInterceptions(EvoMemoryStorageService.getInterceptions());
+    }
+    dispatchApprovedPrompt(curtainRawPrompt, curtainSource);
+    setCurtainOpen(false);
+    setPendingEventId(null);
   };
 
   // Listen to Bridge Messages from iframe
@@ -421,7 +493,7 @@ export default function App() {
       const { type, payload } = event.data;
 
       if (type === 'INPUT_PROMPT_CAPTURED') {
-        handleInterceptInput(payload.prompt, payload.platform || 'generic');
+        handleInterceptInput(payload.prompt, payload.platform || 'generic', 'proxy');
       } else if (type === 'STREAM_CHUNK') {
         handleStreamChunk(payload.chunk, payload.platform || 'generic');
       } else if (type === 'STREAM_COMPLETED') {
@@ -508,6 +580,7 @@ export default function App() {
           activeProject={activeProject}
           mediationLevel={settings.mediationLevel}
           onInterceptInput={handleInterceptInput}
+          approvedWorkstationPrompt={approvedWorkstationPrompt}
           onStreamChunk={handleStreamChunk}
           onStreamComplete={handleStreamComplete}
           onTriggerBreakLoop={() => {
@@ -530,22 +603,20 @@ export default function App() {
             EvoMemoryStorageService.clearInterceptions();
             setInterceptions([]);
           }}
-          onDispatchPrompt={handleApproveAndDispatchPrompt}
+          onDispatchPrompt={(prompt) => dispatchApprovedPrompt(prompt, viewMode)}
         />
       </div>
 
       {/* 3. Interactive Modals */}
       <PromptMediationCurtain
         isOpen={curtainOpen}
-        onClose={() => setCurtainOpen(false)}
+        onClose={handleCancelPrompt}
         analysis={curtainAnalysis}
         rawPrompt={curtainRawPrompt}
         platform={curtainPlatform}
         activeProject={activeProject}
         onApproveAndDispatch={handleApproveAndDispatchPrompt}
-        onSendOriginal={() => {
-          handleApproveAndDispatchPrompt(curtainRawPrompt);
-        }}
+        onSendOriginal={handleSendOriginal}
       />
 
       <BookmarksModal

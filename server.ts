@@ -39,6 +39,23 @@ const RUNTIME_BRIDGE_SCRIPT = `
   window.__EVO_BRIDGE_INJECTED__ = true;
   console.log('[EVO Browser Bridge] Initialized on', window.location.href);
 
+  // Flag to avoid intercepting when EVO itself dispatches an approved message
+  var isEvoDispatching = false;
+
+  // Deduplication tracking to prevent multiple triggers from keydown + click + submit
+  var lastCapturedText = '';
+  var lastCapturedTimestamp = 0;
+
+  function isDuplicateOrRecent(text) {
+    var now = Date.now();
+    if (text === lastCapturedText && (now - lastCapturedTimestamp) < 1800) {
+      return true;
+    }
+    lastCapturedText = text;
+    lastCapturedTimestamp = now;
+    return false;
+  }
+
   function notifyHost(type, payload) {
     try {
       window.parent.postMessage({
@@ -66,38 +83,95 @@ const RUNTIME_BRIDGE_SCRIPT = `
   var currentPlatform = detectPlatform();
   notifyHost('PAGE_LOADED', { platform: currentPlatform, title: document.title });
 
-  // Hook into text inputs and prompt submission
+  function getActiveChatInput() {
+    var active = document.activeElement;
+    if (active && (active.tagName === 'TEXTAREA' || active.isContentEditable || active.getAttribute('role') === 'textbox' || active.classList.contains('ProseMirror'))) {
+      return active;
+    }
+    return document.querySelector('#prompt-textarea, textarea, [contenteditable="true"], [role="textbox"], div.ProseMirror');
+  }
+
+  function interceptAndHalt(e, rawText, sourceEvent) {
+    if (isEvoDispatching) {
+      return; // Allow EVO's own programmatic dispatch to go through
+    }
+    if (!rawText || !rawText.trim()) return;
+
+    var text = rawText.trim();
+    if (isDuplicateOrRecent(text)) {
+      // Prevent duplicate event propagation without re-notifying
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return;
+    }
+
+    console.log('[EVO Bridge] Intercepted user submission (' + sourceEvent + '), halting original execution.');
+
+    // CRITICAL: Stop the event immediately to prevent the webpage from dispatching the unmediated message!
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    notifyHost('INPUT_PROMPT_CAPTURED', {
+      platform: currentPlatform,
+      prompt: text,
+      sourceEvent: sourceEvent,
+      source: 'proxy'
+    });
+  }
+
+  // Hook into text inputs and prompt submission in capture phase
   function setupInputInterception() {
+    // 1. Keydown (Enter without Shift)
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (isEvoDispatching) return;
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
         var target = e.target;
-        if (target && (target.tagName === 'TEXTAREA' || target.isContentEditable || target.getAttribute('role') === 'textbox')) {
-          var text = target.value || target.innerText || '';
+        if (target && (target.tagName === 'TEXTAREA' || target.isContentEditable || target.getAttribute('role') === 'textbox' || target.classList.contains('ProseMirror'))) {
+          var text = target.value || target.innerText || target.textContent || '';
           if (text.trim().length > 0) {
-            notifyHost('INPUT_PROMPT_CAPTURED', {
-              platform: currentPlatform,
-              prompt: text.trim(),
-              elementSelector: target.id ? '#' + target.id : target.className
-            });
+            interceptAndHalt(e, text, 'keydown');
           }
         }
       }
     }, true);
 
-    // Also observe submit buttons
+    // 2. Click on Send buttons
     document.addEventListener('click', function(e) {
-      var btn = e.target.closest('button');
+      if (isEvoDispatching) return;
+      var btn = e.target.closest('button, [role="button"]');
       if (btn) {
-        var form = btn.closest('form');
-        var textarea = form ? form.querySelector('textarea, [contenteditable="true"]') : document.querySelector('textarea, [contenteditable="true"]');
-        if (textarea) {
-          var text = textarea.value || textarea.innerText || '';
-          if (text.trim().length > 0) {
-            notifyHost('INPUT_PROMPT_CAPTURED', {
-              platform: currentPlatform,
-              prompt: text.trim()
-            });
+        var testId = btn.getAttribute('data-testid') || '';
+        var ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
+        var isSend = 
+          testId === 'send-button' ||
+          ariaLabel.includes('send') ||
+          ariaLabel.includes('enviar') ||
+          ariaLabel.includes('prompt') ||
+          btn.type === 'submit' ||
+          (btn.closest('form') && btn.closest('form').querySelector('textarea, [contenteditable="true"]'));
+
+        if (isSend) {
+          var inputField = getActiveChatInput() || (btn.closest('form') ? btn.closest('form').querySelector('textarea, [contenteditable="true"]') : null);
+          if (inputField) {
+            var text = inputField.value || inputField.innerText || inputField.textContent || '';
+            if (text.trim().length > 0) {
+              interceptAndHalt(e, text, 'click');
+            }
           }
+        }
+      }
+    }, true);
+
+    // 3. Form submit event
+    document.addEventListener('submit', function(e) {
+      if (isEvoDispatching) return;
+      var inputField = getActiveChatInput() || (e.target.querySelector ? e.target.querySelector('textarea, [contenteditable="true"], [role="textbox"]') : null);
+      if (inputField) {
+        var text = inputField.value || inputField.innerText || inputField.textContent || '';
+        if (text.trim().length > 0) {
+          interceptAndHalt(e, text, 'submit');
         }
       }
     }, true);
@@ -163,7 +237,11 @@ const RUNTIME_BRIDGE_SCRIPT = `
     var data = event.data;
 
     if (data.action === 'INJECT_OPTIMIZED_PROMPT') {
-      var textarea = document.querySelector('textarea, [contenteditable="true"], [role="textbox"]');
+      // Set dispatching flag so our own injected events aren't intercepted in a loop
+      isEvoDispatching = true;
+      console.log('[EVO Bridge] Injecting approved prompt:', data.prompt.slice(0, 40));
+
+      var textarea = getActiveChatInput();
       if (textarea) {
         if (textarea.isContentEditable) {
           textarea.innerText = data.prompt;
@@ -174,12 +252,35 @@ const RUNTIME_BRIDGE_SCRIPT = `
         textarea.dispatchEvent(new Event('change', { bubbles: true }));
         
         if (data.autoSubmit) {
-          var submitBtn = document.querySelector('button[data-testid="send-button"], button[aria-label*="Send"], button[aria-label*="Enviar"], form button[type="submit"]');
-          if (submitBtn) {
-            setTimeout(function() { submitBtn.click(); }, 150);
-          }
+          setTimeout(function() {
+            var submitBtn = document.querySelector('button[data-testid="send-button"], button[aria-label*="Send"], button[aria-label*="Enviar"], form button[type="submit"]');
+            if (submitBtn) {
+              submitBtn.click();
+            } else {
+              // Trigger Enter key event
+              textarea.dispatchEvent(new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true
+              }));
+            }
+
+            // Release dispatching flag after submission completes
+            setTimeout(function() {
+              isEvoDispatching = false;
+            }, 800);
+          }, 150);
+        } else {
+          isEvoDispatching = false;
         }
+      } else {
+        isEvoDispatching = false;
       }
+    } else if (data.action === 'CANCEL_PENDING_PROMPT') {
+      console.log('[EVO Bridge] Pending prompt cancelled by user.');
+      isEvoDispatching = false;
     }
   });
 

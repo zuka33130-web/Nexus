@@ -11,7 +11,8 @@ interface BrowserViewportProps {
   viewMode: 'proxy' | 'workstation';
   activeProject: EvoMemoryProject;
   mediationLevel: MediationLevel;
-  onInterceptInput: (prompt: string, platform: AIPlatform) => void;
+  onInterceptInput: (prompt: string, platform: AIPlatform, source: 'proxy' | 'workstation') => void;
+  approvedWorkstationPrompt: { prompt: string; id: number } | null;
   onStreamChunk: (chunk: string, platform: AIPlatform) => void;
   onStreamComplete: (fullText: string, platform: AIPlatform) => void;
   onTriggerBreakLoop: () => void;
@@ -23,6 +24,7 @@ export const BrowserViewport: React.FC<BrowserViewportProps> = ({
   activeProject,
   mediationLevel,
   onInterceptInput,
+  approvedWorkstationPrompt,
   onStreamChunk,
   onStreamComplete,
   onTriggerBreakLoop,
@@ -81,40 +83,34 @@ export const BrowserViewport: React.FC<BrowserViewportProps> = ({
     setIframeError(true);
   };
 
-  // Workstation submission with server-side AI execution
-  const handleWorkstationSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const prompt = workstationInput.trim();
-    if (!prompt || isGenerating) return;
+  const lastExecutedApprovedId = useRef<number | null>(null);
 
-    // Trigger mediation hook
-    onInterceptInput(prompt, workstationPlatform);
-
+  // Core execution function that actually dispatches to the AI model
+  const executeWorkstationPrompt = async (finalPrompt: string, wasMediated: boolean = false) => {
     const userMsgId = 'msg_' + Date.now();
-    const newMessages = [
+    const updatedMessages = [
       ...chatMessages,
       {
         id: userMsgId,
         role: 'user' as const,
-        content: prompt,
+        content: finalPrompt,
         timestamp: Date.now(),
         platform: workstationPlatform,
-        tokenCount: Math.ceil(prompt.length / 4),
+        wasMediated,
+        tokenCount: Math.ceil(finalPrompt.length / 4),
       }
     ];
 
-    setChatMessages(newMessages);
-    setWorkstationInput('');
+    setChatMessages(updatedMessages);
     setIsGenerating(true);
 
     try {
-      // Send to server-side AI execution
       const resp = await fetch('/api/ai/direct-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: prompt,
-          history: newMessages
+          message: finalPrompt,
+          history: updatedMessages
             .filter(m => m.role !== 'system')
             .map(m => ({ role: m.role, content: m.content })),
           systemPrompt: `Eres una IA operando bajo la supervisión de EVO BROWSER para el proyecto "${activeProject.name}".
@@ -129,11 +125,9 @@ Responde con máxima precisión y profesionalismo.`,
       const data = await resp.json();
       const replyText = data.reply || 'Sin respuesta';
 
-      // Stream simulation to fire mediation hooks
       onStreamChunk(replyText, workstationPlatform);
       onStreamComplete(replyText, workstationPlatform);
 
-      // Check for loops against past messages
       const isRepeated = chatMessages.some(
         m => m.role === 'assistant' && m.content.slice(0, 100) === replyText.slice(0, 100)
       );
@@ -171,12 +165,49 @@ Responde con máxima precisión y profesionalismo.`,
     }
   };
 
+  // Listen for externally approved prompts (from Asistencia mode curtain or auto-mediation)
+  useEffect(() => {
+    if (approvedWorkstationPrompt && approvedWorkstationPrompt.id !== lastExecutedApprovedId.current) {
+      lastExecutedApprovedId.current = approvedWorkstationPrompt.id;
+      executeWorkstationPrompt(approvedWorkstationPrompt.prompt, true);
+    }
+  }, [approvedWorkstationPrompt]);
+
+  // Workstation submission handler
+  const handleWorkstationSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const prompt = workstationInput.trim();
+    if (!prompt || isGenerating) return;
+
+    // Clear input field immediately
+    setWorkstationInput('');
+
+    // If in assistance mode: STOP original dispatch!
+    // Trigger mediation hook and wait for user's explicit approval in the curtain
+    if (mediationLevel === 'assistance') {
+      console.log('[EVO Workstation] Halting original submission for user approval in Assistance mode.');
+      onInterceptInput(prompt, workstationPlatform, 'workstation');
+      return;
+    }
+
+    // In mediation or autonomous mode: intercept and allow App.tsx to analyze & auto-dispatch
+    if (mediationLevel === 'mediation' || mediationLevel === 'autonomous') {
+      console.log('[EVO Workstation] Halting original submission for auto-mediation.');
+      onInterceptInput(prompt, workstationPlatform, 'workstation');
+      return;
+    }
+
+    // In observation mode: intercept for logging and execute unmediated
+    onInterceptInput(prompt, workstationPlatform, 'workstation');
+    executeWorkstationPrompt(prompt, false);
+  };
+
   const handleSimulateLoop = () => {
     const loopMessage = `Para resolver este problema, te recomiendo reinstalar el paquete 'legacy-core' y reiniciar el servicio con 'service restart'.`;
     const userPrompt = `Sigue fallando con el mismo error de antes. ¿Qué hago?`;
 
     // Intercept input
-    onInterceptInput(userPrompt, workstationPlatform);
+    onInterceptInput(userPrompt, workstationPlatform, 'workstation');
 
     setChatMessages(prev => [
       ...prev,
@@ -368,6 +399,15 @@ Responde con máxima precisión y profesionalismo.`,
                       <>
                         <span>·</span>
                         <span className="font-mono text-slate-500">~{msg.tokenCount} tokens</span>
+                      </>
+                    )}
+                    {msg.wasMediated && (
+                      <>
+                        <span>·</span>
+                        <span className="text-emerald-400 font-medium flex items-center gap-0.5">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          Optimizado por EVO
+                        </span>
                       </>
                     )}
                   </div>
