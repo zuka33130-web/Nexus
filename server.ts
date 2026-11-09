@@ -5,6 +5,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as cheerio from 'cheerio';
 import { GoogleGenAI } from '@google/genai';
+import {
+  GoalManager,
+  InstructionRegistry,
+  PolicyResolver,
+  ContextInjector,
+  ComplianceValidator,
+  AuditLogger,
+} from './src/server/nexusGoalEngine.ts';
 
 dotenv.config();
 
@@ -606,8 +614,153 @@ app.get('/api/ai/ollama/status', async (req: Request, res: Response): Promise<vo
   }
 });
 
+// -------------------------------------------------------------
+// 3.1 NEXUS CAPA 1: GOAL & INSTRUCTION PROTECTION ENGINE ROUTES
+// -------------------------------------------------------------
+
+// GET /api/nexus/goals
+app.get('/api/nexus/goals', (req: Request, res: Response): void => {
+  try {
+    const goals = GoalManager.getGoals();
+    res.json({ success: true, goals });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Error al obtener objetivos' });
+  }
+});
+
+// GET /api/nexus/goals/active
+app.get('/api/nexus/goals/active', (req: Request, res: Response): void => {
+  try {
+    const activeGoal = GoalManager.getActiveGoal();
+    res.json({ success: true, activeGoal });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message || 'Error al obtener objetivo activo' });
+  }
+});
+
+// POST /api/nexus/goals
+app.post('/api/nexus/goals', (req: Request, res: Response): void => {
+  try {
+    const goal = GoalManager.createGoal(req.body);
+    res.status(201).json({ success: true, goal });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Error al crear objetivo' });
+  }
+});
+
+// PUT /api/nexus/goals/:id
+app.put('/api/nexus/goals/:id', (req: Request, res: Response): void => {
+  try {
+    const { updates, explicitAuthorization } = req.body;
+    const updated = GoalManager.updateGoal(req.params.id, updates || req.body, Boolean(explicitAuthorization));
+    res.json({ success: true, goal: updated });
+  } catch (e: any) {
+    res.status(403).json({ error: e?.message || 'Modificación no autorizada o error' });
+  }
+});
+
+// POST /api/nexus/goals/:id/activate
+app.post('/api/nexus/goals/:id/activate', (req: Request, res: Response): void => {
+  try {
+    const activated = GoalManager.activateGoal(req.params.id);
+    res.json({ success: true, goal: activated });
+  } catch (e: any) {
+    res.status(400).json({ error: e?.message || 'Error al activar objetivo' });
+  }
+});
+
+// DELETE /api/nexus/goals/:id
+app.delete('/api/nexus/goals/:id', (req: Request, res: Response): void => {
+  try {
+    const explicitAuthorization = req.query.authorized === 'true' || req.body?.explicitAuthorization === true;
+    const deleted = GoalManager.deleteGoal(req.params.id, explicitAuthorization);
+    res.json({ success: deleted });
+  } catch (e: any) {
+    res.status(403).json({ error: e?.message || 'Eliminación rechazada' });
+  }
+});
+
+// GET /api/nexus/policies/global
+app.get('/api/nexus/policies/global', (req: Request, res: Response): void => {
+  try {
+    const globalInstructions = InstructionRegistry.getGlobalInstructions();
+    res.json({ success: true, globalInstructions });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// POST /api/nexus/policies/global
+app.post('/api/nexus/policies/global', (req: Request, res: Response): void => {
+  try {
+    const { globalInstructions, authorized } = req.body;
+    const saved = InstructionRegistry.saveGlobalInstructions(globalInstructions, authorized !== false);
+    res.json({ success: true, globalInstructions: saved });
+  } catch (e: any) {
+    res.status(403).json({ error: e?.message });
+  }
+});
+
+// GET /api/nexus/policies/conflicts
+app.get('/api/nexus/policies/conflicts', (req: Request, res: Response): void => {
+  try {
+    const activeGoal = GoalManager.getActiveGoal();
+    const globalInstructions = InstructionRegistry.getGlobalInstructions();
+    const resolution = PolicyResolver.resolve(activeGoal, globalInstructions);
+    res.json({
+      success: true,
+      conflicts: resolution.conflicts,
+      effectiveProhibitions: resolution.effectiveProhibitions,
+      effectiveMandatory: resolution.effectiveMandatory,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// GET /api/nexus/audit
+app.get('/api/nexus/audit', (req: Request, res: Response): void => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
+    const history = AuditLogger.getHistory(limit);
+    res.json({ success: true, auditLogs: history });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// POST /api/nexus/context/preview
+app.post('/api/nexus/context/preview', (req: Request, res: Response): void => {
+  try {
+    const activeGoal = GoalManager.getActiveGoal();
+    const globalInstructions = InstructionRegistry.getGlobalInstructions();
+    const envelope = ContextInjector.buildEnvelope(activeGoal, globalInstructions);
+    res.json({ success: true, envelope });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// POST /api/nexus/compliance/validate
+app.post('/api/nexus/compliance/validate', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { aiOutput } = req.body;
+    const activeGoal = GoalManager.getActiveGoal();
+    const globalInstructions = InstructionRegistry.getGlobalInstructions();
+    const report = await ComplianceValidator.validate(aiOutput || '', activeGoal, globalInstructions);
+    res.json({ success: true, report });
+  } catch (e: any) {
+    res.status(500).json({ error: e?.message });
+  }
+});
+
+// -------------------------------------------------------------
+// 3.2 DIRECT AI & LOCAL OLLAMA INTEGRATION ADAPTERS (PROTECTED)
+// -------------------------------------------------------------
+
 // POST /api/ai/direct-chat
-// Direct chat route with streaming support or full response via Gemini 3.8 Flash
+// Direct chat route with streaming support or full response via Gemini 3.8 Flash,
+// with Layer 1 Context Injection & Compliance Validation integrated!
 app.post('/api/ai/direct-chat', async (req: Request, res: Response): Promise<void> => {
   try {
     const { message, history = [], systemPrompt } = req.body;
@@ -616,6 +769,22 @@ app.post('/api/ai/direct-chat', async (req: Request, res: Response): Promise<voi
       res.status(400).json({ error: 'Message is required' });
       return;
     }
+
+    // 1. Retrieve Active Goal and Global Instructions from Nexus Goal Engine
+    const activeGoal = GoalManager.getActiveGoal();
+    const globalInstructions = InstructionRegistry.getGlobalInstructions();
+
+    // 2. Inject context envelope automatically
+    const injection = ContextInjector.buildEnvelope(activeGoal, globalInstructions);
+    const combinedSystemInstruction = `${systemPrompt || 'Eres un asistente técnico de alta precisión supervisado por NEXUS.'}\n\n${injection.structuredContext}`;
+
+    // 3. Log context injection in AuditLogger
+    AuditLogger.log(
+      'context_injected',
+      `Reglas del objetivo protegido "${activeGoal.title}" (v${activeGoal.version}) inyectadas automáticamente.`,
+      true,
+      activeGoal.id
+    );
 
     const contents = [];
     if (Array.isArray(history) && history.length > 0) {
@@ -635,18 +804,36 @@ app.post('/api/ai/direct-chat', async (req: Request, res: Response): Promise<voi
       model: 'gemini-3.8-flash',
       contents,
       config: {
-        systemInstruction: systemPrompt || 'Eres un asistente técnico de alta precisión integrado en EVO Browser.',
+        systemInstruction: combinedSystemInstruction,
       },
     });
 
+    const replyText = response.text || '';
+
+    // 4. Validate compliance of AI response against prohibitions & instructions
+    const complianceReport = await ComplianceValidator.validate(replyText, activeGoal, globalInstructions);
+
     res.json({
       success: true,
-      reply: response.text || '',
+      reply: replyText,
+      complianceReport,
+      activeGoal: {
+        id: activeGoal.id,
+        title: activeGoal.title,
+        version: activeGoal.version,
+        isProtected: activeGoal.isProtected,
+      },
+      injectionSummary: {
+        prohibitionsCount: injection.injectedProhibitionsCount,
+        mandatoryCount: injection.injectedMandatoryCount,
+        criteriaCount: injection.injectedCriteriaCount,
+        tokenCostEstimate: injection.tokenCostEstimate,
+      },
     });
   } catch (error: any) {
     console.error('[Direct Chat Error]', error);
     res.status(500).json({
-      error: 'Error en chat directo',
+      error: 'Error en chat directo protegido',
       details: error?.message || String(error),
     });
   }

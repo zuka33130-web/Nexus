@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { 
   Sparkles, Brain, AlertTriangle, Cpu, Plug, Plus, Trash2, 
   Check, ArrowRight, RefreshCw, X, Shield, Activity, 
-  CheckCircle2, AlertCircle, Copy, Terminal, ExternalLink, Sliders
+  CheckCircle2, AlertCircle, Copy, Terminal, ExternalLink, Sliders, Target
 } from 'lucide-react';
 import { 
   EvoMemoryProject, InterceptionEvent, MediationLevel, AIPlatform 
 } from '../../types/browser';
 import { MediationService } from '../../services/mediationService';
+import { GoalControlCenter } from './GoalControlCenter';
 
 interface EvoSidebarProps {
   isOpen: boolean;
@@ -38,7 +39,7 @@ export const EvoSidebar: React.FC<EvoSidebarProps> = ({
   onClearInterceptions,
   onDispatchPrompt,
 }) => {
-  const [activeTab, setActiveTab] = useState<'mediation' | 'memory' | 'loops' | 'tokens' | 'adapters'>('mediation');
+  const [activeTab, setActiveTab] = useState<'goals' | 'mediation' | 'memory' | 'loops' | 'tokens' | 'adapters'>('goals');
 
   // Local state for new memory entries
   const [newGoal, setNewGoal] = useState('');
@@ -186,11 +187,25 @@ export const EvoSidebar: React.FC<EvoSidebarProps> = ({
       </div>
 
       {/* 2. Navigation Tabs */}
-      <div className="flex items-center justify-between px-2 pt-2 bg-slate-950/50 border-b border-slate-800/80 text-[11px] font-medium">
+      <div className="flex items-center justify-between px-2 pt-2 bg-slate-950/50 border-b border-slate-800/80 text-[11px] font-medium overflow-x-auto no-scrollbar">
+        <button
+          type="button"
+          onClick={() => setActiveTab('goals')}
+          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors shrink-0 ${
+            activeTab === 'goals'
+              ? 'border-emerald-500 text-emerald-400 font-semibold'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+          title="NEXUS Capa 1: Motor de Protección de Objetivos e Instrucciones"
+        >
+          <Target className="w-3.5 h-3.5" />
+          <span>Objetivos</span>
+        </button>
+
         <button
           type="button"
           onClick={() => setActiveTab('mediation')}
-          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors ${
+          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors shrink-0 ${
             activeTab === 'mediation'
               ? 'border-blue-500 text-blue-400 font-semibold'
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -203,7 +218,7 @@ export const EvoSidebar: React.FC<EvoSidebarProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('memory')}
-          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors ${
+          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors shrink-0 ${
             activeTab === 'memory'
               ? 'border-blue-500 text-blue-400 font-semibold'
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -216,7 +231,7 @@ export const EvoSidebar: React.FC<EvoSidebarProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('loops')}
-          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors ${
+          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors shrink-0 ${
             activeTab === 'loops'
               ? 'border-amber-500 text-amber-400 font-semibold'
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -229,7 +244,7 @@ export const EvoSidebar: React.FC<EvoSidebarProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('tokens')}
-          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors ${
+          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors shrink-0 ${
             activeTab === 'tokens'
               ? 'border-emerald-500 text-emerald-400 font-semibold'
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -242,7 +257,7 @@ export const EvoSidebar: React.FC<EvoSidebarProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('adapters')}
-          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors ${
+          className={`flex items-center gap-1.5 py-2 px-2.5 border-b-2 transition-colors shrink-0 ${
             activeTab === 'adapters'
               ? 'border-purple-500 text-purple-400 font-semibold'
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -255,6 +270,11 @@ export const EvoSidebar: React.FC<EvoSidebarProps> = ({
 
       {/* 3. Panel Content Area */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-4">
+        {/* ================= TAB 0: NEXUS GOAL CONTROL CENTER ================= */}
+        {activeTab === 'goals' && (
+          <GoalControlCenter />
+        )}
+
         {/* ================= TAB 1: HUD & MEDIATION ================= */}
         {activeTab === 'mediation' && (
           <div className="space-y-4">

@@ -1,0 +1,35 @@
+[
+  {
+    "id": "goal_nexus_core",
+    "title": "Protección de Objetivos y Estabilidad Operativa",
+    "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+    "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+    "prohibitions": [
+      "No alterar el objetivo principal sin autorización explícita.",
+      "No omitir ninguna de las restricciones estrictas del usuario.",
+      "No asumir que una tarea está resuelta sin validación real."
+    ],
+    "mandatoryInstructions": [
+      "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+      "Conservar intactas las especificaciones técnicas fundamentales.",
+      "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+    ],
+    "constraints": [
+      "Latencia < 50ms",
+      "Inmutabilidad estricta",
+      "Audit logging continuo"
+    ],
+    "successCriteria": [
+      "Cero violaciones de prohibiciones en respuestas de IA.",
+      "Inyección verificable en cada petición antes del despacho al modelo.",
+      "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+    ],
+    "status": "active",
+    "version": 2,
+    "createdAt": 1794127236081,
+    "updatedAt": 1794213816948,
+    "isProtected": true,
+    "scope": "global",
+    "explicitAuthorization": true
+  }
+]

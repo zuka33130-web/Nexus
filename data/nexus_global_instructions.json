@@ -1,0 +1,17 @@
+{
+  "prohibitions": [
+    "PROHIBIDO exponer credenciales, contraseñas o API keys en el cliente.",
+    "PROHIBIDO generar implementaciones simuladas o mock stubs cuando se solicite código funcional.",
+    "PROHIBIDO instalar paquetes sin justificación estricta."
+  ],
+  "mandatoryInstructions": [
+    "OBLIGATORIO utilizar TypeScript con tipado estricto sin usar `any`.",
+    "OBLIGATORIO validar y manejar posibles estados de error en llamadas de red y asíncronas.",
+    "OBLIGATORIO responder en español con explicaciones claras y código completo."
+  ],
+  "constraints": [
+    "Compatibilidad con el entorno Node.js / Vite SPA.",
+    "Preservar la arquitectura existente sin duplicar módulos."
+  ],
+  "updatedAt": 1794213694129
+}

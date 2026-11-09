@@ -1,0 +1,113 @@
+[
+  {
+    "id": "audit_1794213816948_i4xy",
+    "timestamp": 1794213816948,
+    "action": "edit",
+    "details": "Objetivo \"Protección de Objetivos y Estabilidad Operativa\" actualizado a versión 2.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "diff": {
+      "before": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia de inyección de contexto menor a 50ms.",
+          "Inmutabilidad de reglas protegidas sin token de autorización."
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 1,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794213636081,
+        "isProtected": true,
+        "scope": "global"
+      },
+      "after": {
+        "id": "goal_nexus_core",
+        "title": "Protección de Objetivos y Estabilidad Operativa",
+        "description": "Garantizar que todas las interacciones con IA respeten de forma inviolable los objetivos del usuario, sus prohibiciones explícitas y los criterios de éxito verificables.",
+        "expectedOutcome": "Respuestas precisas que cumplan al 100% las restricciones sin desvíos ni omisiones.",
+        "prohibitions": [
+          "No alterar el objetivo principal sin autorización explícita.",
+          "No omitir ninguna de las restricciones estrictas del usuario.",
+          "No asumir que una tarea está resuelta sin validación real."
+        ],
+        "mandatoryInstructions": [
+          "Verificar siempre el cumplimiento de las prohibiciones antes de entregar una respuesta.",
+          "Conservar intactas las especificaciones técnicas fundamentales.",
+          "Informar inmediatamente si el usuario solicita algo que contradiga las directivas protegidas."
+        ],
+        "constraints": [
+          "Latencia < 50ms",
+          "Inmutabilidad estricta",
+          "Audit logging continuo"
+        ],
+        "successCriteria": [
+          "Cero violaciones de prohibiciones en respuestas de IA.",
+          "Inyección verificable en cada petición antes del despacho al modelo.",
+          "Registro inalterable de cada conflicto y modificación en el Audit Logger."
+        ],
+        "status": "active",
+        "version": 2,
+        "createdAt": 1794127236081,
+        "updatedAt": 1794213816948,
+        "isProtected": true,
+        "scope": "global",
+        "explicitAuthorization": true
+      }
+    },
+    "author": "User"
+  },
+  {
+    "id": "audit_1794213811779_din3",
+    "timestamp": 1794213811779,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" sin confirmación explícita.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794213804206_osyg",
+    "timestamp": 1794213804207,
+    "action": "validation_violation",
+    "details": "Incumplimiento heurístico detectado: No alterar el objetivo principal sin autorización explícita.; No omitir ninguna de las restricciones estrictas del usuario.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794213736359_r549",
+    "timestamp": 1794213736359,
+    "action": "context_injected",
+    "details": "Reglas del objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" (v1) inyectadas automáticamente.",
+    "authorized": true,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  },
+  {
+    "id": "audit_1794213723288_46pd",
+    "timestamp": 1794213723288,
+    "action": "reject_unauthorized",
+    "details": "Intento denegado de modificar el objetivo protegido \"Protección de Objetivos y Estabilidad Operativa\" sin confirmación explícita.",
+    "authorized": false,
+    "goalId": "goal_nexus_core",
+    "author": "User"
+  }
+]
